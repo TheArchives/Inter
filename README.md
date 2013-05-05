@@ -11,9 +11,11 @@ Requirements
 * Python 2.x (I recommend Python 2.7)
 * Twisted (And therefore Zope)
 * PyYaml
+* yapsy
 
 Running
 -------
 
+* Setup: ```python setup.py install``` (Untested but it /should/ work. Should. Maybe.)
 * Starting the server: ```python run.py```
 * Running the tests: ```python test.py``` (Currently broken)
