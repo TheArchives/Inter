@@ -16,4 +16,4 @@ Running
 -------
 
 * Starting the server: ```python run.py```
-* Running the tests: ```python test.py```
+* Running the tests: ```python test.py``` (Currently broken)

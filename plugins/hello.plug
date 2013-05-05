@@ -1,0 +1,9 @@
+[Core]
+Name = Hello World
+Module = hello
+
+[Documentation]
+Description = An example plugin. Print "Hello, world!" to the log when activated and deactivated.
+Author = Gareth Coles
+Version = 0.1
+Website = https://github.com/gdude2002/Inter

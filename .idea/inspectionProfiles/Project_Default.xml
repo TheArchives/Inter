@@ -1,0 +1,26 @@
+<component name="InspectionProjectProfileManager">
+  <profile version="1.0" is_locked="false">
+    <option name="myName" value="Project Default" />
+    <option name="myLocal" value="false" />
+    <inspection_tool class="CssConvertColorToRgbInspection" enabled="true" level="WEAK WARNING" enabled_by_default="true" />
+    <inspection_tool class="LossyEncoding" enabled="true" level="WARNING" enabled_by_default="true" />
+    <inspection_tool class="PyBroadExceptionInspection" enabled="true" level="INFO" enabled_by_default="true" />
+    <inspection_tool class="PyDocstringInspection" enabled="true" level="WEAK WARNING" enabled_by_default="true" />
+    <inspection_tool class="PyMandatoryEncodingInspection" enabled="true" level="WARNING" enabled_by_default="true" />
+    <inspection_tool class="PyUnresolvedReferencesInspection" enabled="true" level="INFO" enabled_by_default="true">
+      <option name="ignoredIdentifiers">
+        <value>
+          <list size="2">
+            <item index="0" class="java.lang.String" itemvalue="connectTCP" />
+            <item index="1" class="java.lang.String" itemvalue="factory" />
+          </list>
+        </value>
+      </option>
+    </inspection_tool>
+    <inspection_tool class="SpellCheckingInspection" enabled="false" level="TYPO" enabled_by_default="false">
+      <option name="processCode" value="true" />
+      <option name="processLiterals" value="true" />
+      <option name="processComments" value="true" />
+    </inspection_tool>
+  </profile>
+</component>
