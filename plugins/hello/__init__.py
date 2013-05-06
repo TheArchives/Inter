@@ -4,6 +4,7 @@ __author__ = "Gareth Coles"
 import logging
 from system.plugin import Plugin
 from system import config as conf
+from system.events import manager
 
 
 class HelloPlugin (Plugin):
@@ -27,4 +28,9 @@ class HelloPlugin (Plugin):
             self.config.save_mapping("hello", "hello.yml")
             self.config.save_file("hello.yml", {"message": "Hello, world!"})
             self.config.reload()
+        self.events = manager.manager()
+        self.events.addCallback("dataReceived", self, self.onDataReceived, 1)
+        self.logger.info(self.config.get("hello")["message"])
+
+    def onDataReceived(self, event):
         self.logger.info(self.config.get("hello")["message"])

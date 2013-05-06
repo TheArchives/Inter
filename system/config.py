@@ -21,7 +21,11 @@ class configuration(object):
     This class will automatically load all configuration files specified in config/mapping.yml when instanciated.
 
     Public methods:
-        get(key)            Get configuration data for a given key.
+        get(key)                    Get configuration data for a given key, or False if it doesn't exist.
+        save_file(filename, dict)   Save configuration to a file. If you do this a lot, consider using `system.storage`.
+        save_mapping(key, filename) Save a mapping between a key and a filename.
+        get_mapping(key)            Get a filename for a mapping, or None if it doesn't exist.
+        reload()                    Reload all mappings and configurations.
     """
     files = {}
     logger = logging.getLogger("Config")
@@ -31,12 +35,14 @@ class configuration(object):
         mappings = self._load_file(BASE_PATH % "mapping.yml")
 
         for n, f in mappings.items():
-            self.logger.info("Loading configuration: '%s'" % n)
             data = self._load_file(BASE_PATH % f)
             if data:
                 fmap = {"name": n, "path": f, "data": data}
                 self.files[n] = fmap
+                self.logger.info("Loaded configuration: '%s'" % n)
                 self.logger.debug("Data: %s" % fmap)
+            else:
+                self.logger.info("Unable to load configuration: '%s'" % n)
         self.logger.info("Finished loading configuration.")
 
     def _load_file(self, filename):
@@ -67,6 +73,8 @@ class configuration(object):
         """
         Save a dictionary to a yaml file.
         This will only save stuff in the config/ folder, don't specify config/ in the path.
+        :param dictionary: The data to be saved, a standard Python dictionary
+        :param filename:   The file to save to, without config/
         """
         if "\\" in filename:
             filename = filename.replace("\\", "/")

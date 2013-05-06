@@ -4,25 +4,29 @@ import json
 import logging
 
 from twisted.internet.protocol import Factory, connectionDone
-from twisted.internet.error import ConnectionDone
 from twisted.protocols.basic import LineReceiver
-from yapsy.PluginFileLocator import PluginFileLocator
-from yapsy.PluginManager import PluginManager
+from yapsy.PluginManager import PluginManagerSingleton
 from system import util
+from system.events import manager
+from system.events.event import clientConnectedEvent, clientDisconnectedEvent, dataReceivedEvent, pluginLoadedEvent, \
+    pluginsLoadedEvent, protocolBuiltEvent
 
 import system.globals as g
 
 
 class Core(LineReceiver):
-
     """
     Core networking and parsing.
     This class is the `core` of the application and is responsible for individual connections.
     """
 
-    def __init__(self, factory):
+    host = ""
+
+    def __init__(self, factory, addr):
         self.factory = factory
+        self.host = addr.host
         self.logger = logging.getLogger("Protocol")
+        self.events = manager.manager()
         self.id = None
 
     def connectionMade(self):
@@ -32,32 +36,61 @@ class Core(LineReceiver):
         # host = self.transport.getPeer().host
         # port = self.transport.getPeer().port
         data = json.dumps({"version": g.__version__})
-        self.sendLine(data)
+        self.send(data)
+        event = clientConnectedEvent(self)
+        self.events.runCallback("clientConnected", event)
 
     def connectionLost(self, reason=connectionDone):
         """
         Called when the client loses connection.
         :param reason: Why the client lost connection.
         """
-        self.logger.info("Client %s disconnected: %s" % (self.transport.getPeer().host, reason.getErrorMessage()))
+        event = clientDisconnectedEvent(self)
+        self.events.runCallback("clientDisconnected", event)
+        self.info("Disconnected: %s" % reason.getErrorMessage())
 
     def lineReceived(self, line):
         """
         Called when a line is recieved from the client. Must end with '\n'.
         :param line: The data recieved.
         """
-        self.logger.debug("Data: %s" % line.rstrip("\n"))
+        self.debug("Data: %s" % line.rstrip("\n"))
         try:
             data = json.loads(line)
         except ValueError:
+            self.warn("Unable to parse JSON: %s" % line.rstrip("\n"))
             data = json.dumps({"error": "No JSON object could be decoded"})
-            self.sendLine(data)
+            self.send(data)
         except Exception as e:
-            util.output_exception(self.logger)
+            util.output_exception(self)  # Never do this, by the way. Hackish formatting = baaaaaaaad.
             data = json.dumps({"error": str(e)})
             self.sendLine(data)
         else:
-            self.logger.debug("Parsed data: %s" % data)
+            self.debug("Parsed data: %s" % data)
+            event = dataReceivedEvent(self, data)
+            self.events.runCallback("dataReceived", event)
+
+    def log(self, level, message):
+        self.logger.log(level, "%s | %s" % (self.host.rjust(15), message))
+
+    def debug(self, message):
+        self.log(logging.DEBUG, message)
+
+    def info(self, message):
+        self.log(logging.INFO, message)
+
+    def warn(self, message):
+        self.log(logging.WARN, message)
+
+    def error(self, message):
+        self.log(logging.ERROR, message)
+
+    def critical(self, message):
+        self.log(logging.CRITICAL, message)
+
+    def send(self, data):
+        self.debug("Sending data: %s" % data)
+        self.sendLine(data)
 
 
 class CoreFactory(Factory):
@@ -68,13 +101,13 @@ class CoreFactory(Factory):
     """
 
     def __init__(self):
+        self.servers = {}
         self.logger = logging.getLogger("Factory")
-        self.plugman = PluginManager()
+        self.plugman = PluginManagerSingleton.get()
+        self.events = manager.manager()
         self.plugman.setPluginPlaces(["plugins"])
         self.plugman.setPluginInfoExtension("plug")
         self.plugman.collectPlugins()
-        self.servers = {}
-        self.callbacks = {}
 
         self.logger.info("Loading plugins..")
         for pluginInfo in self.plugman.getAllPlugins():
@@ -88,7 +121,12 @@ class CoreFactory(Factory):
                 self.plugman.deactivatePluginByName(pluginInfo.name)
             else:
                 self.logger.info("Loaded plugin: %s v%s" % (pluginInfo.name, pluginInfo.version))
+                event = pluginLoadedEvent(self, pluginInfo)
+                self.events.runCallback("pluginLoaded", event)
         self.logger.info("Finished loading plugins.")
+
+        event = pluginsLoadedEvent(self)
+        self.events.runCallback("pluginsLoaded", event)
 
     def buildProtocol(self, addr):
         """
@@ -96,15 +134,10 @@ class CoreFactory(Factory):
         :param addr: IAddress of the client.
         """
         self.logger.info("Client connecting - %s:%s" % (addr.host, addr.port))
-        return Core(self)
-
-    def addCallback(self, key, func):
-        if not key in self.callbacks:
-            self.callbacks[key] = [func]
-        else:
-            callbacks = self.callbacks[key]
-            callbacks.append(func)
-            self.callbacks[key] = callbacks
+        protocol = Core(self, addr)
+        event = protocolBuiltEvent(self, protocol)
+        self.events.runCallback("protocolBuilt", event)
+        return protocol
 
     def cleanup(self):
         """
