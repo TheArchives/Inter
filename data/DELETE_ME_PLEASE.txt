@@ -1,0 +1,5 @@
+This is a file of not much importance.
+
+It simply exists because one limitation of git is that you cannot commit an empty directory.
+
+Bah. Reminds me of zipfiles.
