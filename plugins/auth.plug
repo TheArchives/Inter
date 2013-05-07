@@ -1,0 +1,9 @@
+[Core]
+Name = Authentication
+Module = auth
+
+[Documentation]
+Description = A plugin for simple API-key based authentication
+Author = Gareth Coles
+Version = 0.1
+Website = https://github.com/gdude2002/Inter

@@ -93,6 +93,6 @@ class protocolBuiltEvent(Event):
     Protocol object is available through event.protocol
     """
 
-    def __init__(self, caller, prototocl):
+    def __init__(self, caller, protocol):
         super(protocolBuiltEvent, self).__init__(caller)
-        self.prototocl = prototocl
+        self.protocol = protocol

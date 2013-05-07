@@ -139,6 +139,20 @@ class configuration(object):
                 self.logger.debug("Data: %s" % fmap)
         self.logger.info("Finished reloading configuration.")
 
+    def reload_mapping(self, mapping):
+        self.logger.debug("Reloading mapping: %s" % mapping)
+        mappings = self._load_file(BASE_PATH % "mapping.yml")
+
+        if mapping in mappings:
+            n = mapping
+            f = mappings[mapping]
+            data = self._load_file(BASE_PATH % f)
+            fmap = {"name": n, "path": f, "data": data}
+            self.files[n] = fmap
+            self.logger.debug("Data: %s" % fmap)
+            return True
+        return False
+
 
 def conf():
     """

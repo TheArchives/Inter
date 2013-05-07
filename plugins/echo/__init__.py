@@ -6,6 +6,7 @@ from system.plugin import Plugin
 from system import config as conf
 from system.events import manager
 
+
 class EchoPlugin (Plugin):
 
     """
