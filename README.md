@@ -19,4 +19,4 @@ Running
 -------
 
 * Setup: ```python setup.py install``` (Untested but it /should/ work. Should. Maybe.)
-* Starting the server: ```python run.py```
+* Starting the server: ```python run.py``` (```--debug``` for debug mode)
