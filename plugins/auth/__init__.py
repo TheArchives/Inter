@@ -6,6 +6,7 @@ import logging
 from system.plugin import Plugin
 from system import config as conf
 from system.events import manager
+from authorizedEvent import authorizedEvent
 
 
 class AuthPlugin (Plugin):
@@ -31,31 +32,55 @@ class AuthPlugin (Plugin):
         self.events = manager.manager()
         self.events.addCallback("dataReceived", self, self.onDataReceived, 99999)
         self.events.addCallback("protocolBuilt", self, self.onProtocolBuiltEvent, 99999)
+        self.events.addCallback("clientDisconnected", self, self.onClientDisconnected, 0)
 
     def onDataReceived(self, event):
-        data = event.data
-        self.config.reload_mapping("auth")
+        if not event.caller.authenticated:
+            data = event.data
+            self.config.reload_mapping("auth")
 
-        if "api_key" in data:
-            conf = self.config.get("auth")
-            for x, y in conf["keys"].items():
-                if data["api_key"] == x:
-                    if not event.caller.authenticated:
+            if "api_key" in data:
+                for x, y in event.caller.factory.servers.items():
+                    if data["api_key"] == y.api_key:
+                        event.cancel()
+                        event.caller.send(json.dumps({"error": "There is already a server with this API key connected",
+                                                      "from": "auth", "status": "error"}))
+                        event.caller.transport.loseConnection()
+                        return
+                conf = self.config.get("auth")
+                for x, y in conf["keys"].items():
+                    if data["api_key"] == x:
                         self.logger.info("Client authenticated: %s" % y)
                         event.caller.authenticated = True
-                    return
-            event.cancel()
-            if event.caller.authenticated:
-                event.caller.send(json.dumps({"error": "Your API key has been revoked."}))
+                        event.caller.api_key = x
+                        event.caller.name = y
+                        event.caller.send(json.dumps({"name": y, "from": "auth",
+                                                      "status": "success"}))
+                        if "not_server" in data:
+                            if data["not_server"]:
+                                return
+                        event.caller.factory.servers[y] = event.caller
+                        authevent = authorizedEvent(self, event.caller)
+                        self.events.runCallback("onAuthorized", authevent)
+                        return
+                event.cancel()
+                event.caller.send(json.dumps({"error": "Your API key is invalid.", "from": "auth",
+                                              "status": "error"}))
+                event.caller.transport.loseConnection()
             else:
-                event.caller.send(json.dumps({"error": "Your API key is invalid."}))
-            event.caller.transport.loseConnection()
-
-        else:
-            event.cancel()
-            event.caller.send(json.dumps({"error": "You did not provide an API key."}))
-            event.caller.transport.loseConnection()
+                event.cancel()
+                event.caller.send(json.dumps({"error": "You did not provide an API key.", "from": "auth",
+                                              "status": "error"}))
+                event.caller.transport.loseConnection()
 
     def onProtocolBuiltEvent(self, event):
         event.protocol.authenticated = False
         self.logger.debug("Added `authenticated` flag to protocol object.")
+        event.protocol.api_key = None
+        event.protocol.name = None
+        self.logger.debug("Added `name` and `api_key` variables to protocol object.")
+
+    def onClientDisconnected(self, event):
+        if event.caller.name:
+            del event.caller.factory.servers[event.caller.name]
+            self.logger.debug("Removed server '%s' from factory servers dict." % event.caller.name)

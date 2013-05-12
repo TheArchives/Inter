@@ -48,6 +48,7 @@ class Core(LineReceiver):
         event = clientDisconnectedEvent(self)
         self.events.runCallback("clientDisconnected", event)
         self.info("Disconnected: %s" % reason.getErrorMessage())
+        self.factory.clients.remove(self)
 
     def lineReceived(self, line):
         """
@@ -92,6 +93,12 @@ class Core(LineReceiver):
         self.debug("Sending data: %s" % data)
         self.sendLine(data)
 
+    def sendToOthers(self, data):
+        clients = self.factory.clients
+        for client in clients:
+            if not client == self:
+                client.send(data)
+
 
 class CoreFactory(Factory):
     """
@@ -102,6 +109,7 @@ class CoreFactory(Factory):
 
     def __init__(self):
         self.servers = {}
+        self.clients = []
         self.logger = logging.getLogger("Factory")
         self.plugman = PluginManagerSingleton.get()
         self.events = manager.manager()
@@ -137,7 +145,16 @@ class CoreFactory(Factory):
         protocol = Core(self, addr)
         event = protocolBuiltEvent(self, protocol)
         self.events.runCallback("protocolBuilt", event)
+        self.clients.append(protocol)
         return protocol
+
+    def sendToAll(self, data):
+        """
+        Send a message to all clients.
+        :param data: JSON to send to all connected clients.
+        """
+        for client in self.clients:
+            client.send(data)
 
     def cleanup(self):
         """

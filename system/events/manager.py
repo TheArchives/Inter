@@ -9,7 +9,6 @@ from system.decorators import Singleton
 
 @Singleton
 class EventManager(object):
-
     """
     The event manager.
 
@@ -54,7 +53,7 @@ class EventManager(object):
     """
 
     callbacks = {}
-        # {"callbackname": [{"name": name, "priority": prioriy, "function": function, "cancelled": cancelled]}
+    # {"callbackname": [{"name": name, "priority": prioriy, "function": function, "cancelled": cancelled]}
 
     def __init__(self):
         self.logger = logging.getLogger("Events")
@@ -139,14 +138,19 @@ class EventManager(object):
     def runCallback(self, callback, event):
         if self.hasCallback(callback):
             for cb in self.getCallbacks(callback):
-                self.logger.debug("Running callback: %s" % cb)
-                if event.cancelled:
-                    if cb["cancelled"]:
-                        cb["function"](event)
+                try:
+                    self.logger.debug("Running callback: %s" % cb)
+                    if event.cancelled:
+                        if cb["cancelled"]:
+                            cb["function"](event)
+                        else:
+                            self.logger.debug("Not running, event is cancelled and handler doesn't accept cancelled " +
+                                              "events")
                     else:
-                        self.logger.debug("Not running, event is cancelled and handler doesn't accept cancelled events")
-                else:
-                    cb["function"](event)
+                        cb["function"](event)
+                except Exception as e:
+                    self.logger.warn("Error running callback '%s': %s" % (callback, e))
+
 
 def manager():
     """
