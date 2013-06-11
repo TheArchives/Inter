@@ -141,10 +141,10 @@ class CoreFactory(Factory):
         Builds an instance of the protocol for a client.
         :param addr: IAddress of the client.
         """
-        self.logger.info("Client connecting - %s:%s" % (addr.host, addr.port))
         protocol = Core(self, addr)
         event = protocolBuiltEvent(self, protocol)
         self.events.runCallback("protocolBuilt", event)
+        protocol.info("Client connecting on port %s" % addr.port)
         self.clients.append(protocol)
         return protocol
 

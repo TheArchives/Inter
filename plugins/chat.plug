@@ -1,0 +1,9 @@
+[Core]
+Name = Chat
+Module = chat
+
+[Documentation]
+Description = A plugin for relaying chat between servers
+Author = Gareth Coles
+Version = 0.1
+Website = https://github.com/gdude2002/Inter
