@@ -10,5 +10,5 @@ setup(
     author='Gareth Coles',
     author_email='gdude2002@pageserved.com',
     description='Inter-server communication for Minecraft',
-    requires=["PyYaml", "yapsy", "Zope.interface", "twisted"]
+    requires=["PyYaml", "yapsy", "Zope.interface", "twisted", "psycopg2"]
 )

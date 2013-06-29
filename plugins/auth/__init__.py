@@ -86,7 +86,7 @@ class AuthPlugin (Plugin):
                                 event.caller.not_server = True
                                 return
                         event.caller.sendToOthers(json.dumps({"from": "auth", "action": "authenticated",
-                                                              "name": y}))
+                                                              "name": y, "status": "success"}))
                         event.caller.factory.servers[y] = event.caller
                         authevent = authorizedEvent(self, event.caller)
                         self.events.runCallback("onAuthorized", authevent)
