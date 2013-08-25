@@ -2,14 +2,16 @@
 
 import json
 import logging
+import time
 
 from twisted.internet.protocol import Factory, connectionDone
+from twisted.internet import reactor
 from twisted.protocols.basic import LineReceiver
 from yapsy.PluginManager import PluginManagerSingleton
 from system import util
 from system.events import manager
 from system.events.event import clientConnectedEvent, clientDisconnectedEvent, dataReceivedEvent, pluginLoadedEvent, \
-    pluginsLoadedEvent, protocolBuiltEvent
+    pluginsLoadedEvent, protocolBuiltEvent, pingSentEvent, pongReceivedEvent
 
 import system.globals as g
 
@@ -21,6 +23,7 @@ class Core(LineReceiver):
     """
 
     host = ""
+    pings = []
 
     def __init__(self, factory, addr):
         self.factory = factory
@@ -28,6 +31,24 @@ class Core(LineReceiver):
         self.logger = logging.getLogger("Protocol")
         self.events = manager.manager()
         self.id = None
+
+    def ping(self):
+        if not self.connected:
+            return
+        if len(self.pings) > 2:
+            self.send(json.dumps({"error": "Ping timeout", "from": "core"}))
+            self.transport.loseConnection()
+            return
+        now = str(time.time())
+
+        self.debug("Sending ping: %s" % now)
+
+        self.send(json.dumps({"from": "ping", "timestamp": now}))
+        self.pings.append(now)
+
+        event = pingSentEvent(self, now)
+        self.events.runCallback("pingSent", event)
+        reactor.callLater(30, self.ping)
 
     def connectionMade(self):
         """
@@ -37,6 +58,7 @@ class Core(LineReceiver):
         # port = self.transport.getPeer().port
         data = json.dumps({"version": g.__version__})
         self.send(data)
+        self.ping()
         event = clientConnectedEvent(self)
         self.events.runCallback("clientConnected", event)
 
@@ -45,6 +67,9 @@ class Core(LineReceiver):
         Called when the client loses connection.
         :param reason: Why the client lost connection.
         """
+
+        self.connected = 0
+
         event = clientDisconnectedEvent(self)
         self.events.runCallback("clientDisconnected", event)
         self.info("Disconnected: %s" % reason.getErrorMessage())
@@ -68,6 +93,17 @@ class Core(LineReceiver):
             self.sendLine(data)
         else:
             self.debug("Parsed data: %s" % data)
+
+            if "pong" in data:
+                pong = data["pong"]
+
+                self.debug("Received pong: %s" % pong)
+
+                self.pings.remove(pong)
+                event = pongReceivedEvent(self, pong)
+                self.events.runCallback("pingSent", event)
+                return
+
             event = dataReceivedEvent(self, data)
             self.events.runCallback("dataReceived", event)
 
@@ -90,8 +126,9 @@ class Core(LineReceiver):
         self.log(logging.CRITICAL, message)
 
     def send(self, data):
-        self.debug("Sending data: %s" % data)
-        self.sendLine(data)
+        if self.connected:
+            self.debug("Sending data: %s" % data)
+            self.sendLine(data)
 
     def sendToOthers(self, data):
         clients = self.factory.clients

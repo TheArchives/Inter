@@ -61,6 +61,23 @@ class dataReceivedEvent(Event):
         super(dataReceivedEvent, self).__init__(caller)
         self.data = data
 
+class pingSentEvent(Event):
+    """
+    Event fired when a ping is sent to a client.
+    """
+
+    def __init__(self, caller, timestamp):
+        super(pingSentEvent, self).__init__(caller)
+        self.timestamp = timestamp
+
+class pongReceivedEvent(Event):
+    """
+    Event fired when a client recieves a pong.
+    """
+
+    def __init__(self, caller, timestamp):
+        super(pongReceivedEvent, self).__init__(caller)
+        self.timestamp = timestamp
 
 class pluginLoadedEvent(Event):
     """
