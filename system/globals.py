@@ -1,3 +1,3 @@
 # coding=utf-8
 __author__ = "Gareth Coles"
-__version__ = 2
+__version__ = 3

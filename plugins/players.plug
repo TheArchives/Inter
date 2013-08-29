@@ -1,0 +1,9 @@
+[Core]
+Name = Players
+Module = players
+
+[Documentation]
+Description = A plugin that tracks online players on all connected servers.
+Author = Gareth Coles
+Version = 0.1
+Website = https://github.com/gdude2002/Inter

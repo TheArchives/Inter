@@ -1,6 +1,7 @@
 # coding=utf-8
 import logging
 from operator import itemgetter
+from system import util
 
 __author__ = "Gareth Coles"
 
@@ -150,6 +151,7 @@ class EventManager(object):
                         cb["function"](event)
                 except Exception as e:
                     self.logger.warn("Error running callback '%s': %s" % (callback, e))
+                    util.output_exception(self.logger, logging.WARN)
 
 
 def manager():

@@ -85,11 +85,11 @@ class Core(LineReceiver):
             data = json.loads(line)
         except ValueError:
             self.warn("Unable to parse JSON: %s" % line.rstrip("\n"))
-            data = json.dumps({"error": "No JSON object could be decoded"})
+            data = json.dumps({"error": "No JSON object could be decoded", "from": "core"})
             self.send(data)
         except Exception as e:
             util.output_exception(self)  # Never do this, by the way. Hackish formatting = baaaaaaaad.
-            data = json.dumps({"error": str(e)})
+            data = json.dumps({"error": str(e), "from": "core"})
             self.sendLine(data)
         else:
             self.debug("Parsed data: %s" % data)
@@ -198,6 +198,13 @@ class CoreFactory(Factory):
         Cleans up plugins and the like after the program has been asked to terminate.
         """
         self.logger.info("Shutting down..")
+        self.logger.info("Dropping clients..")
+
+        for client in self.clients:
+            client.send(json.dumps({"error": "Server is shutting down", "from": "core"}))
+            client.transport.loseConnection()
+            del client
+
         self.logger.info("Disabling plugins..")
         for pluginInfo in self.plugman.getAllPlugins():
             try:
