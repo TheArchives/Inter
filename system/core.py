@@ -31,11 +31,13 @@ class Core(LineReceiver):
         self.logger = logging.getLogger("Protocol")
         self.events = manager.manager()
         self.id = None
+        self.pings = []
 
     def ping(self):
         if not self.connected:
             return
         if len(self.pings) > 2:
+            self.info("Disconnecting: Ping timeout.")
             self.send(json.dumps({"error": "Ping timeout", "from": "core"}))
             self.transport.loseConnection()
             return
