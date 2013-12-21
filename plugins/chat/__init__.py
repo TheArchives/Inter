@@ -61,6 +61,8 @@ class ChatPlugin (Plugin):
 
                 self.saveMessage(smessage)
 
+                self.logger.info("<%s@%s> %s" % (data["user"], event.caller.name, data["message"]))
+
                 if target:
                     if target in self.factory.servers:
                         self.factory.servers[target].send(json.dumps({"from": "chat", "source": event.caller.name,

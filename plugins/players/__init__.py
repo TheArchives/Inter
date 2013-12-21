@@ -66,7 +66,7 @@ class PlayersPlugin (Plugin):
                 return
             if data["action"] == "players":
                 if data["type"] == "online":
-                    self.logger.debug("Player connected to %s: %s." % (event.caller.name, data["player"]))
+                    self.logger.info("Player connected to %s: %s." % (event.caller.name, data["player"]))
                     event.caller.players.append(data["player"])
                     self.sendToOthers(event.caller,
                                       json.dumps({"from": "players", "type": "online", "player": data["player"],
@@ -74,7 +74,7 @@ class PlayersPlugin (Plugin):
                                       )
                 elif data["type"] == "offline":
                     if data["player"] in event.caller.players:
-                        self.logger.debug("Player disconnected from %s: %s." % (event.caller.name, data["player"]))
+                        self.logger.info("Player disconnected from %s: %s." % (event.caller.name, data["player"]))
                         event.caller.players.remove(data["player"])
                         self.sendToOthers(event.caller,
                                           json.dumps({"from": "players", "type": "offline", "player": data["player"],
