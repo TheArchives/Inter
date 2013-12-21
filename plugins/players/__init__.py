@@ -62,6 +62,8 @@ class PlayersPlugin (Plugin):
     def onDataReceived(self, event):
         if event.caller.authenticated:
             data = event.data
+            if not "action" in data:
+                return
             if data["action"] == "players":
                 if data["type"] == "online":
                     self.logger.debug("Player connected to %s: %s." % (event.caller.name, data["player"]))
