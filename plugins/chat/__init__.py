@@ -50,29 +50,29 @@ class ChatPlugin (Plugin):
 
         if "action" in data:
             if data["action"] == "chat":
+                del data["action"]
+
+                data["time"] = curtime
+                data["source"] = event.caller.name
+
                 message = data["message"]
                 user = data["user"]
                 target = None
-                smessage = {"message": data["message"], "time": curtime, "user": data["user"],
-                            "source": event.caller.name}
-                if "target" in data:
-                    target = data["target"]
-                    smessage["target"] = data["target"]
 
-                self.saveMessage(smessage)
+                self.saveMessage(data)
+
+                data["from"] = "chat"
 
                 self.logger.info("<%s@%s> %s" % (data["user"], event.caller.name, data["message"]))
 
                 if target:
                     if target in self.factory.servers:
-                        self.factory.servers[target].send(json.dumps({"from": "chat", "source": event.caller.name,
-                                                                      "time": curtime, "message": message, "user": user}))
+                        self.factory.servers[target].send(json.dumps(data))
                     else:
                         event.caller.send(json.dumps({"from": "chat", "error": "Unable to locate server: " + target,
                                                       "code": 1}))
                 else:
-                    event.caller.sendToOthers(json.dumps({"from": "chat", "source": event.caller.name,
-                                                          "time": curtime, "message": message, "user": user}))
+                    event.caller.sendToOthers(json.dumps(data))
 
             elif data["action"] == "chat-history":
                 pass
